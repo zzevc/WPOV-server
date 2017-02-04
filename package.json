@@ -1,0 +1,12 @@
+{
+    "name": "wpov-server",
+    "version": "",
+    "private": true,
+    "scripts": {
+        "start": "node app.js"
+    },
+
+    "dependencies": {
+        "mysql": "latest"
+    }
+}
