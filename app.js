@@ -1,5 +1,3 @@
-
-var http = require('http');
 var mysql = require('mysql');
 
 var biliAPI = require('./bilibili/biliAPI.js')
@@ -20,7 +18,7 @@ connection.query('CREATE TABLE ', function (error, results, fields){
 */
 connection.end();
 
-biliAPI.getVideoNum(http);
+biliAPI.getAllVideoData(1);
 
 /**
  * Bilibili API

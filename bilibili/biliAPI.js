@@ -1,11 +1,9 @@
 var async = require('async');
+var http = require('http');
+var fs = require('fs');
 
-/**
- * 问题：如果截止
- */
-
-var getVideoData = function (http, id, callback) {
-    var url = "http://api.bilibili.com/archive_rank/getarchiverankbypartion?type=jsonp&tid=30&ps=1&pn=" + id.toString();
+var getVideoNum = function (callback) {
+    var url = "http://api.bilibili.com/archive_rank/getarchiverankbypartion?type=jsonp&tid=30&ps=1&pn=1";
 
     http.get(url, function (res) {
         var resData = "";
@@ -14,33 +12,96 @@ var getVideoData = function (http, id, callback) {
         });
 
         res.on("end", function () {
-            callback(JSON.parse(resData));
+            //callback(null, 50);
+            callback(null, JSON.parse(resData).data.page.count);
         });
     }).on('error', function (err) {
-        console.err(err);
-    });
-}
-
-var getVideoNum = function (http) {
-    getVideoData(http, 1, function (data, callback) {
-        callback(data.data.page.count);
+        callback(err);
     });
 };
 
-var getAllVideoData = function (http) {
-    var num = getVideoNum();
+var getAllVideoData = function (begin) {
+    getVideoNum(function (err, total) {
+        var arr = [], result = [], fetch = 0, last = "", offset = 0, backcheck = false;
+        var getVideoData = function (id, callback) {
+            var url = "http://api.bilibili.com/archive_rank/getarchiverankbypartion?type=jsonp&tid=30&ps=1&pn=" + id.toString();
 
-    for (var i = 1; i != num; i++) {
-        var data = JSON.parse(getVideoData(i))["data"]["0"];
-    }
+            setTimeout(function () {
+                http.get(url, function (res) {
+                    var resData = "";
+
+                    res.on('data', function (data) {
+                        resData += data;
+                    });
+
+                    res.on("end", function () {
+                        if (resData.substr(0, 1) == "<") {
+                            callback(id);
+                        }
+                        else {
+                            var data = JSON.parse(resData).data.archives["0"],
+                                profile = {
+                                    aid: data.aid,
+                                    copyright: data.copyright,
+                                    pic: data.pic,
+                                    title: data.title,
+                                    duration: data.duration,
+                                    tags: data.tags,
+                                    stat: data.stat,
+                                    play: data.play,
+                                    create: data.create,
+                                    description: data.description,
+                                    mid: data.mid,
+                                    author: data.author
+                                },
+                                count = JSON.parse(resData).data.page.count;
+
+                            if (resData == count) {
+                                total++; offset++;
+                                arr.push(total);
+                            }
+                            else {
+                                if(backcheck) result.unshift(profile);
+                                else result.push(profile);
+
+                                console.log(id);
+
+                                if (id == total) callback(id);
+                                else callback(null);
+                            }
+                        }
+                    });
+                }).on('error', function (err) {
+                    callback(err);
+                });
+            }, 5);
+        };
+
+        for (var i = begin; i <= total; i++) {
+            arr.push(i);
+        }
+
+        async.eachSeries(arr, getVideoData, function (err) {
+            console.log("Till: ", err);
+            console.log("Total: ", total - offset);
+
+            arr = [], backcheck = true;
+            for (var i = offset; i >= 1; i--) {
+                arr.push(i);
+            }
+
+            async.eachSeries(arr, getVideoData, function (err) {
+                console.log("Till: ", err);
+                console.log("Total(Offset): ", offset);
+
+                //Save to File.
+                fs.writeFile('results.json', JSON.stringify(result, null, 4), 'utf8', (err) => {
+                    if (err) throw err;
+                    console.log("Filewrite success!");
+                });
+            })
+        });
+    });
 };
 
-async.auto({
-    getVideoNum: function(callback){
-        callback
-    }
-})
-
-
-exports.getVideoNum = getVideoNum;
-exports.getVideoData = getVideoData;
+exports.getAllVideoData = getAllVideoData;
