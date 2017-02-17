@@ -39,4 +39,5 @@ jspm_packages
 #Debug Files
 documents
 result
+results
 results.json

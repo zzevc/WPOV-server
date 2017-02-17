@@ -38,7 +38,7 @@ var getVideoNum = function (callback) {
 
 var getAllVideoData = function (begin, cbAfter) {
     getVideoNum(function (err, total) {
-        var arr = [], result = [], fetch = 0, last = "", offset = 0, backcheck = false;
+        var arr = [], result = [], fetch = 0, last = "", offset = 0, backcheck = false, totalss = [];
         var getVideoData = function (id, callback) {
             var url = "http://api.bilibili.com/archive_rank/getarchiverankbypartion?type=jsonp&tid=30&ps=1&pn=" + id.toString();
 
@@ -76,13 +76,25 @@ var getAllVideoData = function (begin, cbAfter) {
                                 arr.push(total);
                             }
                             else {
-                                //console.log(id);
+                                console.log("WPOV-Server: " + id + "/" + count);
                                 if (typeof cbAfter != "function") {
                                     if (backcheck) result.unshift(profile);
                                     else result.push(profile);
                                 }
                                 else {
-                                    cbAfter(profile);
+                                    cbAfter(profile, function (finalAns) {
+                                        if (finalAns) {
+                                            console.log("==========  Match VALUE  ==========");
+                                            console.log(finalAns);
+                                            console.log("==========Match VALUE END==========");
+
+                                            if (backcheck) result.unshift(profile);
+                                            else result.push(profile);
+                                        }
+
+                                        if (backcheck) totalss.unshift(profile);
+                                        else totalss.push(profile);
+                                    });
                                 }
 
                                 if (id == total) callback(id);
@@ -115,9 +127,14 @@ var getAllVideoData = function (begin, cbAfter) {
 
                 var d = new Date();
                 //Save to File.
-                fs.writeFile("./results/total_" + biliGetDate(".") + ".json", JSON.stringify(result, null, 4), 'utf8', (err) => {
+                fs.writeFile("./results/total_" + Date() + ".json", JSON.stringify(totalss, null, 4), 'utf8', (err) => {
                     if (err) throw err;
-                    console.log("Filewrite success!");
+                    console.log("Total write success!");
+                });
+
+                fs.writeFile("./results/vc_" + Date() + ".json", JSON.stringify(result, null, 4), 'utf8', (err) => {
+                    if (err) throw err;
+                    console.log("Result write success!");
                 });
             })
         });
@@ -125,3 +142,4 @@ var getAllVideoData = function (begin, cbAfter) {
 };
 
 exports.getAllVideoData = getAllVideoData;
+exports.biliGetDate = biliGetDate;
