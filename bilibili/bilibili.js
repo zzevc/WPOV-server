@@ -77,6 +77,7 @@ var getAllVideoData = function (begin, cbAfter) {
                             }
                             else {
                                 console.log("WPOV-Server: " + id + "/" + count);
+                                console.log("aid: " + profile.aid);
                                 if (typeof cbAfter != "function") {
                                     if (backcheck) result.unshift(profile);
                                     else result.push(profile);
@@ -86,7 +87,7 @@ var getAllVideoData = function (begin, cbAfter) {
                                         if (finalAns) {
                                             console.log("==========  Match VALUE  ==========");
                                             console.log(finalAns);
-                                            console.log("==========Match VALUE END==========");
+                                            console.log("==========Match VALUE END==========\n");
 
                                             if (backcheck) result.unshift(profile);
                                             else result.push(profile);
@@ -105,7 +106,7 @@ var getAllVideoData = function (begin, cbAfter) {
                 }).on('error', function (err) {
                     callback(err);
                 });
-            }, 5);
+            }, 100);
         };
 
         for (var i = begin; i <= total; i++) {
